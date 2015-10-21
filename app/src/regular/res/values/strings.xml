@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">AppTestRegular</string>
+    <string name="title_activity_product">ProductList</string>
+    <string name="action_settings">Settings</string>
+    <string name="category_url">http://public.dawanda.in/category.json</string>
+    <string name="product_url">http://public.dawanda.in/products.json</string>
+    <string name="syncing_product_list">Syncing Product List</string>
+    <string name="product_list_synced">Product List Synced</string>
+    <string name="syncing_category_list">Syncing Category List</string>
+</resources>

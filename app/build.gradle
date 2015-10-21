@@ -1,0 +1,54 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 23
+    buildToolsVersion "23.0.1"
+
+    defaultConfig {
+        applicationId "com.design.ivan.apptest.id"
+        minSdkVersion 10
+        targetSdkVersion 19
+        versionCode 1
+        versionName "1.0"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        debug{
+            applicationIdSuffix ".debug"
+        }
+    }
+
+    def final String AUTHORITY = '.dataprovider'
+
+
+    productFlavors{
+        improved{
+            applicationId = "com.design.ivan.apptest.improved"
+            versionName "1.0-improved"
+            resValue "string", "authority", applicationId + AUTHORITY
+            buildConfigField "String", "AUTHORITY_GRADLE", "\""+applicationId + AUTHORITY+"\""
+        }
+        regular{
+            applicationId = "com.design.ivan.apptest.regular"
+            versionName "1.0-regular"
+            resValue "string", "authority", applicationId + AUTHORITY
+            buildConfigField "String", "AUTHORITY_GRADLE", "\""+applicationId + AUTHORITY+"\""
+        }
+    }
+
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    testCompile 'junit:junit:4.12'
+    compile 'com.android.support:appcompat-v7:23.0.1'
+    compile 'com.android.support:design:23.0.1'
+    compile 'com.android.support:support-v4:23.0.1'
+    compile 'com.android.support:recyclerview-v7:23.0.1'
+    compile 'com.android.support:cardview-v7:23.0.1'
+    compile 'com.squareup.picasso:picasso:2.5.2'
+
+}
