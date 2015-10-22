@@ -27,7 +27,7 @@ public class AppSyncAdapter extends AbstractThreadedSyncAdapter {
     @Override
     public void onPerformSync(Account account, Bundle extras, String authority, ContentProviderClient provider, SyncResult syncResult) {
         Log.d(TAG, "onPerformSync Called.");
-
+        //TODO: add server code here.
     }
 
     /**
