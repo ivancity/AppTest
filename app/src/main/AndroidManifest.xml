@@ -21,11 +21,8 @@
         <provider
             android:name=".appdata.AppContentProvider"
             android:authorities="@string/authority" />
-<!--
-        <provider
-            android:name=".appdata.AppContentProvider"
-            android:authorities="${applicationId}" />
--->
+
+        <service android:name=".service.AppTestService"/>
         <activity
             android:name=".ProductActivity"
             android:label="@string/title_activity_product"
