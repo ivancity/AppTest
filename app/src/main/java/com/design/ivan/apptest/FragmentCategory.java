@@ -1,6 +1,5 @@
 package com.design.ivan.apptest;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -18,7 +17,7 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 
 import com.design.ivan.apptest.appdata.AppDataContract;
-import com.design.ivan.apptest.appsync.GetCategoryTask;
+import com.design.ivan.apptest.service.AppTestService;
 
 /**
  * Created by ivanm on 10/12/15.
@@ -130,11 +129,13 @@ public class FragmentCategory extends Fragment
     }
 
     protected void updateList(){
-        Log.d(TAG, "start category task");
+        Log.d(TAG, "start service intent");
         //It is going to attempt to get the category list from the server
-        GetCategoryTask getCategoryTask = new GetCategoryTask(getActivity());
-        Activity activity = getActivity();
-        getCategoryTask.execute(activity.getString(R.string.category_url));
+        Intent intent = new Intent(getActivity(), AppTestService.class);
+        intent.putExtra(AppTestService.URL_CATEGORY_EXTRA
+                , getActivity().getString(R.string.category_url));
+        getActivity().startService(intent);
+
     }
 
     @Override
