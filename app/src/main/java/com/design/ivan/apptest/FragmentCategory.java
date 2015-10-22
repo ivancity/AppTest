@@ -1,8 +1,5 @@
 package com.design.ivan.apptest;
 
-import android.app.AlarmManager;
-import android.app.PendingIntent;
-import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -20,7 +17,7 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 
 import com.design.ivan.apptest.appdata.AppDataContract;
-import com.design.ivan.apptest.service.AppTestService;
+import com.design.ivan.apptest.appsync.AppSyncAdapter;
 
 /**
  * Created by ivanm on 10/12/15.
@@ -132,29 +129,9 @@ public class FragmentCategory extends Fragment
     }
 
     protected void updateList(){
-        Log.d(TAG, "sendning Pending Intent");
+        Log.d(TAG, "calling sync adapter");
 
-        //create an Intent with Broadcast Receiver. Add category url in the extra for the
-        //PendingIntent to send to the Broadcast Receiver.
-        Intent intentAlarm = new Intent(getActivity(), AppTestService.AlarmReceiver.class);
-        intentAlarm.putExtra(AppTestService.URL_CATEGORY_EXTRA
-                , getActivity().getString(R.string.category_url));
-
-        //Wrap intentAlarm in a pending intent which only fires once.
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(getActivity()
-                , 0
-                ,intentAlarm //it will start only once
-                ,PendingIntent.FLAG_ONE_SHOT);//getBroadcast(context, 0, i, 0);
-
-        //Get the alarm manager from the system.
-        AlarmManager alarmManager = (AlarmManager)getActivity()
-                .getSystemService(Context.ALARM_SERVICE);
-
-        //Set the AlarmManager to wake up the system at some point in the future. The PendingIntent
-        //will be set off when the time arrives.
-        alarmManager.set(AlarmManager.RTC_WAKEUP // will not wake up the device if off
-                , System.currentTimeMillis() + 5000 //wake up at 5 seconds
-                , pendingIntent);
+        AppSyncAdapter.syncImmediately(getActivity());
 
 
     }

@@ -25,6 +25,7 @@ import java.util.Vector;
 /**
  * Created by ivanm on 10/21/15.
  */
+//TODO: DELETE THIS CLASS
 public class AppTestService extends IntentService {
 
 
