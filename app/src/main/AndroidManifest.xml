@@ -17,12 +17,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <provider
-            android:name=".appdata.AppContentProvider"
-            android:authorities="@string/authority" />
-
-        <service android:name=".service.AppTestService"/>
         <activity
             android:name=".ProductActivity"
             android:label="@string/title_activity_product"
@@ -32,6 +26,17 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.design.ivan.apptest.MainActivity" />
         </activity>
+
+        <provider
+            android:name=".appdata.AppContentProvider"
+            android:authorities="@string/authority" />
+
+        <service android:name=".service.AppTestService"/>
+
+        <receiver
+            android:name=".service.AppTestService$AlarmReceiver"
+            android:enabled="true"/>
+
     </application>
 
 </manifest>

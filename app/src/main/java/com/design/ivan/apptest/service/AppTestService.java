@@ -1,7 +1,9 @@
 package com.design.ivan.apptest.service;
 
 import android.app.IntentService;
+import android.content.BroadcastReceiver;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.util.Log;
@@ -245,6 +247,20 @@ public class AppTestService extends IntentService {
 
         categoryCursor.close();
         return categoryValues;
+    }
+
+    static public class AlarmReceiver extends BroadcastReceiver{
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Log.d(TAG, "in AlarmReceiver onReceive");
+            Intent startIntent = new Intent(context, AppTestService.class);
+            //Get the extra coming from the Alarm Manager of the system. Set by the Fragment.
+            //Now that the BroacastReceiver is working by the system, wake up the the service.
+            startIntent.putExtra(AppTestService.URL_CATEGORY_EXTRA
+                    , intent.getStringExtra(AppTestService.URL_CATEGORY_EXTRA));
+            context.startService(startIntent);
+        }
     }
 
 }
