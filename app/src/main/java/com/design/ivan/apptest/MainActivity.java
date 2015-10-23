@@ -81,11 +81,12 @@ public class MainActivity extends AppCompatActivity
                     //check if listview is still empty
                     FragmentCategory frC = (FragmentCategory)((AppViewPagerAdapter) viewPager.getAdapter())
                             .getItem(0);
-                    if(frC != null){
-                        if(frC.switchOffSet){
-                            frC.providerHasChanged();
-                        }
-                    }
+                    handleProgressBar(frC);
+                } else {
+                    //3 pane layout thus find by id
+                    FragmentCategory frC = (FragmentCategory)getSupportFragmentManager()
+                            .findFragmentById(R.id.fragment_category_list);
+                    handleProgressBar(frC);
                 }
                 /*
                 if(switchOffSet) {
@@ -102,6 +103,15 @@ public class MainActivity extends AppCompatActivity
                 */
 
             }
+
+            public void handleProgressBar(FragmentCategory frC){
+                if(frC != null){
+                    if(frC.switchOffSet){
+                        frC.providerHasChanged();
+                    }
+                }
+            }
+
         };
 
         getContentResolver().registerContentObserver(AppDataContract.CategoryEntry.CONTENT_URI
