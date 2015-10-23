@@ -39,6 +39,7 @@
         <provider
             android:name=".appdata.AppContentProvider"
             android:authorities="@string/authority"
+            android:label="AppTest Provider"
             android:exported="false"
             android:syncable="true"/>
 

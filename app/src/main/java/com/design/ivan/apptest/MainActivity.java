@@ -7,6 +7,7 @@ import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 
+import com.design.ivan.apptest.appsync.AppSyncAdapter;
 import com.design.ivan.apptest.interfaces.CallBackList;
 
 public class MainActivity extends AppCompatActivity
@@ -56,7 +57,7 @@ public class MainActivity extends AppCompatActivity
             tabLayout.setOnTabSelectedListener(this);
         }
 
-
+        AppSyncAdapter.initializeSyncAdapter(this);
 
     }
 

@@ -42,7 +42,7 @@ public class FragmentProduct extends Fragment
     @Override
     public void onStart() {
         super.onStart();
-        getImgFromDb();
+        //getImgFromDb();
     }
 
     private void getImgFromDb(){

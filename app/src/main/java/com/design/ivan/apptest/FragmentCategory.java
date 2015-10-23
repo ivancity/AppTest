@@ -17,7 +17,6 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 
 import com.design.ivan.apptest.appdata.AppDataContract;
-import com.design.ivan.apptest.appsync.AppSyncAdapter;
 
 /**
  * Created by ivanm on 10/12/15.
@@ -131,7 +130,7 @@ public class FragmentCategory extends Fragment
     protected void updateList(){
         Log.d(TAG, "calling sync adapter");
 
-        AppSyncAdapter.syncImmediately(getActivity());
+        //AppSyncAdapter.syncImmediately(getActivity());
 
 
     }

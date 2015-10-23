@@ -7,8 +7,10 @@ import android.content.ContentProviderClient;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.SyncRequest;
 import android.content.SyncResult;
 import android.database.Cursor;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -34,6 +36,14 @@ import java.util.Vector;
 public class AppSyncAdapter extends AbstractThreadedSyncAdapter {
 
     private static final String TAG = AppSyncAdapter.class.getSimpleName();
+    public static final int DEBUG_TIME = 30; //seconds
+
+
+    // Interval at which to sync with the server, in seconds.
+    // 60 seconds (1 minute) * 180 = 3 hours
+    //public static final int SYNC_INTERVAL = 60 * 180;
+    public static final int SYNC_INTERVAL = DEBUG_TIME;
+    public static final int SYNC_FLEXTIME = SYNC_INTERVAL/3;
 
     public AppSyncAdapter(Context context, boolean autoInitialize) {
         super(context, autoInitialize);
@@ -41,7 +51,7 @@ public class AppSyncAdapter extends AbstractThreadedSyncAdapter {
 
     @Override
     public void onPerformSync(Account account, Bundle extras, String authority, ContentProviderClient provider, SyncResult syncResult) {
-        Log.d(TAG, "onPerformSync Called.");
+        Log.d(TAG, "ONPREFORMSYNC Called.");
         //getting necessary URL from extra and pass it to the method
         String rawJsonResponse = getServerData(Constants.category_url);
 
@@ -85,6 +95,11 @@ public class AppSyncAdapter extends AbstractThreadedSyncAdapter {
                 context.getString(R.string.app_name), context.getString(R.string.sync_account_type));
 
         // If the password doesn't exist, the account doesn't exist
+        /*
+        will create a new account if no com.design.ivan.apptest.FLAVORNAME.sync account exists.
+        If this is the case, onAccountCreated will be called.
+         */
+        String password = accountManager.getPassword(newAccount);
         if ( null == accountManager.getPassword(newAccount) ) {
 
         /*
@@ -92,6 +107,7 @@ public class AppSyncAdapter extends AbstractThreadedSyncAdapter {
          * If successful, return the Account object, otherwise report an error.
          */
             if (!accountManager.addAccountExplicitly(newAccount, "", null)) {
+                Log.d(TAG, "AccountManager not able to add New Account.");
                 return null;
             }
             /*
@@ -101,9 +117,59 @@ public class AppSyncAdapter extends AbstractThreadedSyncAdapter {
              * here.
              */
 
+            onAccountCreated(newAccount, context);
+
         }
         return newAccount;
     }
+
+    /**
+     * Helper method to schedule the sync adapter periodic execution
+     */
+    public static void configurePeriodicSync(Context context, int syncInterval, int flexTime) {
+        Account account = getSyncAccount(context);
+        String authority = context.getString(R.string.authority);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            // we can enable inexact timers in our periodic sync
+            SyncRequest.Builder request = (new SyncRequest.Builder()).
+                    syncPeriodic(syncInterval, flexTime);
+
+            request.setSyncAdapter(account, authority);
+            request.setExtras(new Bundle());
+            ContentResolver.requestSync(request.build());
+        } else {
+            ContentResolver.addPeriodicSync(account,
+                    authority, new Bundle(), syncInterval);
+        }
+    }
+
+    /**
+     * If an account is created this method will set a periodic execution of the sync adapter
+     * @param newAccount
+     * @param context
+     */
+    private static void onAccountCreated(Account newAccount, Context context) {
+        /*
+         * Since we've created an account
+         */
+        AppSyncAdapter.configurePeriodicSync(context, SYNC_INTERVAL, SYNC_FLEXTIME);
+
+        /*
+         * Without calling setSyncAutomatically, our periodic sync will not be enabled. Set the
+         * as true for automatic sync in the specified newAccount
+         */
+        ContentResolver.setSyncAutomatically(newAccount, context.getString(R.string.authority), true);
+
+        /*
+         * Finally, let's do a sync to get things started
+         */
+        syncImmediately(context);
+    }
+
+    public static void initializeSyncAdapter(Context context) {
+        getSyncAccount(context);
+    }
+
 
     protected String getServerData(String urlServer){
         HttpURLConnection urlConnection = null;
@@ -223,7 +289,7 @@ public class AppSyncAdapter extends AbstractThreadedSyncAdapter {
                 inserted = getContext().getContentResolver().bulkInsert(AppDataContract.CategoryEntry.CONTENT_URI, cvArray);
             }
 
-            Log.d(TAG, "GetCategoryTask Complete. " + inserted + " Inserted");
+            Log.d(TAG, "APPSYNCADPATER Complete. " + inserted + " Inserted");
 
         } catch(JSONException e) {
             Log.e(TAG, e.getMessage(), e);

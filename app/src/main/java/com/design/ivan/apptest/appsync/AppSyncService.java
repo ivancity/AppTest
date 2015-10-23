@@ -15,7 +15,7 @@ public class AppSyncService extends Service {
 
     @Override
     public void onCreate() {
-        Log.d("SunshineSyncService", "onCreate - SunshineSyncService");
+        Log.d("AppSyncService", "ON CREATE - CALLING APPSYNCADAPTER");
         synchronized (mSyncAdapterLock) {
             if (mAppSyncAdapter == null) {
                 mAppSyncAdapter = new AppSyncAdapter(getApplicationContext(), true);
