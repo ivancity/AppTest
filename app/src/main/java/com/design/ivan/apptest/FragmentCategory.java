@@ -15,6 +15,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 
 import com.design.ivan.apptest.appdata.AppDataContract;
 
@@ -29,6 +30,9 @@ public class FragmentCategory extends Fragment
 
     ListView listCategory;
     AppCursorAdapter adapter;
+
+    private ProgressBar mProgressBar;
+    public boolean switchOffSet = false;
 
     private static final int CATEGORY_LOADER = 0;
 
@@ -70,6 +74,7 @@ public class FragmentCategory extends Fragment
         //categoryRecycleView = (RecyclerView) view.findViewById(R.id.recyclerview_category);
         //TODO: remove listView once CursorAdapter is available for RecyclerView above
         listCategory = (ListView) view.findViewById(R.id.list_category);
+        mProgressBar = (ProgressBar) view.findViewById(R.id.loading_category);
 
         //categoryRecycleView.setHasFixedSize(true);
 
@@ -113,11 +118,6 @@ public class FragmentCategory extends Fragment
         super.onActivityCreated(savedInstanceState);
     }
 
-    @Override
-    public void onStart() {
-        super.onStart();
-        updateList();
-    }
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
@@ -127,13 +127,7 @@ public class FragmentCategory extends Fragment
         super.onSaveInstanceState(outState);
     }
 
-    protected void updateList(){
-        Log.d(TAG, "calling sync adapter");
 
-        //AppSyncAdapter.syncImmediately(getActivity());
-
-
-    }
 
     @Override
     public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
@@ -185,10 +179,39 @@ public class FragmentCategory extends Fragment
             listCategory.smoothScrollToPosition(mPosition);
         }
 
+        int listCount = listCategory.getAdapter().getCount();
+        Log.d(TAG, "NUMBER OF ITEMS ON LIST: " + listCount);
+        if(listCount == 0){
+            isEmptyList();
+        }
+
     }
 
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
         adapter.swapCursor(null);
     }
+
+
+    private void isEmptyList(){
+        switchOffSet = true;
+        Log.d(TAG, "READY FOR ACTION");
+        if(mProgressBar != null){
+            if(mProgressBar.getVisibility() != View.VISIBLE){
+                mProgressBar.setVisibility(View.VISIBLE);
+            }
+        }
+    }
+
+    public void providerHasChanged(){
+        Log.d(TAG, "switch or not progresss bar");
+        //if(switchOffSet) {
+            if(mProgressBar.getVisibility() == View.VISIBLE){
+                mProgressBar.setVisibility(View.GONE);
+                switchOffSet = false;
+            }
+        //}
+    }
+
+
 }

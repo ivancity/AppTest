@@ -1,26 +1,36 @@
 package com.design.ivan.apptest;
 
+import android.database.ContentObserver;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.support.design.widget.TabLayout;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 
+import com.design.ivan.apptest.appdata.AppDataContract;
 import com.design.ivan.apptest.appsync.AppSyncAdapter;
+import com.design.ivan.apptest.interfaces.CallBackEmptyList;
 import com.design.ivan.apptest.interfaces.CallBackList;
 
 public class MainActivity extends AppCompatActivity
         implements TabLayout.OnTabSelectedListener,
-                    CallBackList{
+                    CallBackList,
+                    CallBackEmptyList {
 
     protected ViewPager viewPager;
 
-
     protected boolean mTwoPane;
+    private boolean switchOffSet = false;
+
+    private ContentObserver mObserver;
 
     private static final String PRODUCTFRAGMENT_TAG = "DFTAG";
     private static final String CATEGORYFRAGMENT_TAG = "CFTAG";
+    private static final String TAG = MainActivity.class.getSimpleName();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,6 +39,8 @@ public class MainActivity extends AppCompatActivity
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+
 
         if(findViewById(R.id.fragment_product_list) != null) {
 
@@ -59,30 +71,64 @@ public class MainActivity extends AppCompatActivity
 
         AppSyncAdapter.initializeSyncAdapter(this);
 
+        //TODO: try using 2 Content Observers
+        mObserver = new ContentObserver(new Handler(Looper.getMainLooper())) {
+            public void onChange(boolean selfChange) {
+
+                Log.d(TAG, "SOMETHING CHANGED in Content Provider");
+
+                if(viewPager != null){
+                    //check if listview is still empty
+                    FragmentCategory frC = (FragmentCategory)((AppViewPagerAdapter) viewPager.getAdapter())
+                            .getItem(0);
+                    if(frC != null){
+                        if(frC.switchOffSet){
+                            frC.providerHasChanged();
+                        }
+                    }
+                }
+                /*
+                if(switchOffSet) {
+                    if(mProgressBar.getVisibility() != View.VISIBLE){
+                        mProgressBar.setVisibility(View.VISIBLE);
+                        switchOffSet = false;
+                    }
+                }else {
+                    if(mProgressBar.getVisibility() == View.VISIBLE)
+                        mProgressBar.setVisibility(View.GONE);
+                    else
+                        mProgressBar.setVisibility(View.VISIBLE);
+                }
+                */
+
+            }
+        };
+
+        getContentResolver().registerContentObserver(AppDataContract.CategoryEntry.CONTENT_URI
+                , false
+                , mObserver);
+
+
+
+
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-
-        findCategoryFragAndUpdateList();
+        //TODO: remove this method when Sync Adapter is implemented for Products
         findProductFragAndUpdateList();
 
-        if(viewPager != null){
-            //AppViewPagerAdapter adapter = (AppViewPagerAdapter)viewPager.getAdapter();
-            //((FragmentCategory)adapter.getItem(0)).updateList();
-
-        }
-
 
     }
 
-    private void findCategoryFragAndUpdateList(){
-        FragmentCategory fc = (FragmentCategory) getSupportFragmentManager()
-                .findFragmentById(R.id.fragment_category_list);
-        if(fc != null)
-            fc.updateList();
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        getContentResolver().unregisterContentObserver(mObserver);
     }
+
+
 
     private void findProductFragAndUpdateList(){
         ProductActivityFragment pf = (ProductActivityFragment) getSupportFragmentManager()
@@ -140,6 +186,11 @@ public class MainActivity extends AppCompatActivity
                           .setData(uri);
         startActivity(intent);
          */
+
+    }
+
+    @Override
+    public void onEmptyList(boolean isEmpty) {
 
     }
 }

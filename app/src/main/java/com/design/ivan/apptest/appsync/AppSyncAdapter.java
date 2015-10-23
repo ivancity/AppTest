@@ -56,13 +56,23 @@ public class AppSyncAdapter extends AbstractThreadedSyncAdapter {
         String rawJsonResponse = getServerData(Constants.category_url);
 
         try {
+            callActivity();
             if(rawJsonResponse != null)
                 getCategoryFromJson(rawJsonResponse);
             else
                 Log.d(TAG, "Something went wrong receiving raw json response");
         } catch (JSONException e) {
             e.printStackTrace();
+        } finally {
+            callActivity();
         }
+    }
+
+    private void callActivity(){
+        getContext().getContentResolver()
+                .notifyChange(AppDataContract.CategoryEntry.CONTENT_URI
+                        , null
+                        , false);
     }
 
     /**
