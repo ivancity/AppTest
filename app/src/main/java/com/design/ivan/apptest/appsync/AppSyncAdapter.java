@@ -2,19 +2,27 @@ package com.design.ivan.apptest.appsync;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.AbstractThreadedSyncAdapter;
 import android.content.ContentProviderClient;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.SyncRequest;
 import android.content.SyncResult;
 import android.database.Cursor;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.TaskStackBuilder;
 import android.util.Log;
 
 import com.design.ivan.apptest.Constants;
+import com.design.ivan.apptest.MainActivity;
 import com.design.ivan.apptest.R;
 import com.design.ivan.apptest.appdata.AppDataContract;
 
@@ -45,6 +53,23 @@ public class AppSyncAdapter extends AbstractThreadedSyncAdapter {
     //public static final int SYNC_INTERVAL = DEBUG_TIME;
     public static final int SYNC_FLEXTIME = SYNC_INTERVAL/3;
 
+    public static final int CATEGORY_NOTIFICATION_ID = 5000;
+    private static final long DAY_IN_MILLIS = 1000 * 60 * 60 * 24;
+
+    private static final String[] NOTIFY_CATEGORY_PROJECTION = {
+            AppDataContract.CategoryEntry._ID, //important to keep this Column here otherwise it will crash
+            AppDataContract.CategoryEntry.COLUMN_CATEGORY_API_ID,
+            AppDataContract.CategoryEntry.COLUMN_CATEGORY_NAME,
+            AppDataContract.CategoryEntry.COLUMN_IMAGE_URL,
+    };
+
+    static final int INDEX_CATEGORY_ID = 0;
+    static final int INDEX_CATEGORY_API_ID = 1;
+    static final int INDEX_CATEGORY_NAME = 2;
+    static final int INDEX_IMAGE_URL = 3;
+
+
+
     public AppSyncAdapter(Context context, boolean autoInitialize) {
         super(context, autoInitialize);
     }
@@ -64,6 +89,8 @@ public class AppSyncAdapter extends AbstractThreadedSyncAdapter {
         } catch (JSONException e) {
             e.printStackTrace();
         } finally {
+            //notifyUser();
+            //TODO: Debug purposes. manage this call back to the Activity properly
             callActivity();
         }
     }
@@ -109,7 +136,7 @@ public class AppSyncAdapter extends AbstractThreadedSyncAdapter {
         will create a new account if no com.design.ivan.apptest.FLAVORNAME.sync account exists.
         If this is the case, onAccountCreated will be called.
          */
-        String password = accountManager.getPassword(newAccount);
+
         if ( null == accountManager.getPassword(newAccount) ) {
 
         /*
@@ -178,6 +205,77 @@ public class AppSyncAdapter extends AbstractThreadedSyncAdapter {
 
     public static void initializeSyncAdapter(Context context) {
         getSyncAccount(context);
+    }
+
+    private void notifyUser(){
+        Context context = getContext();
+
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        String lastNotificationKey = context.getString(R.string.s_prefrence_last_notification);
+        long lastSync = prefs.getLong(lastNotificationKey, 0);
+
+        //more than a day has past since last update notify user
+//        if(System.currentTimeMillis() - lastSync >= DAY_IN_MILLIS){
+            //TODO: make a query to the Content Provider
+            //Create URI with specific Id of category
+            //Uri categoryUri = AppDataContract.CategoryEntry.buildCategoryUri(SOME_ID);
+            //Query Content Provider
+/*
+            Cursor cursor = context.getContentResolver().query(
+                    categoryUri
+                    ,NOTIFY_CATEGORY_PROJECTION
+                    ,null
+                    ,null
+                    ,null
+            );
+*/
+            //if(cursor.moveToFirst()){ do something } else { don't do anything }
+
+            //TODO: Get some data from the cursor
+            String textMessage = "Some text";
+            int drawableId = R.drawable.ic_photo_size_select_actual_black_36dp;
+
+            // NotificationCompatBuilder is a very convenient way to build backward-compatible
+            // notifications.  Just throw in some data.
+            NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(getContext())
+                    .setSmallIcon(drawableId)
+                    .setContentTitle("Title")
+                    .setContentText(textMessage);
+
+            // Make something interesting happen when the user clicks on the notification.
+            // In this case, opening the app is sufficient.
+            Intent resultIntent = new Intent(context, MainActivity.class);
+
+            // The stack builder object will contain an artificial back stack for the
+            // started Activity.
+            // This ensures that navigating backward from the Activity leads out of
+            // your application to the Home screen.
+            TaskStackBuilder stackBuilder = TaskStackBuilder.create(context);
+            stackBuilder.addNextIntent(resultIntent);
+            PendingIntent resultPendingIntent =
+                    stackBuilder.getPendingIntent(
+                            0,
+                            PendingIntent.FLAG_UPDATE_CURRENT //If pending intent exist keep it but replace its
+                                    //extra with new extra coming from this new Pending Intent.
+                    );
+            //Pending Intent to send when the notification is clicked.
+            mBuilder.setContentIntent(resultPendingIntent);
+
+            NotificationManager mNotificationManager =
+                    (NotificationManager) getContext().getSystemService(Context.NOTIFICATION_SERVICE);
+            // CATEGORY_NOTIFICATION_ID allows you to update the notification later on.
+            //if notification with the same ID has been alaready posted will be replaced with this one.
+            mNotificationManager.notify(CATEGORY_NOTIFICATION_ID, mBuilder.build());
+
+
+            //Refresh last sync with current time and save in SharedPreferences.
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.putLong(lastNotificationKey, System.currentTimeMillis());
+            editor.commit();
+
+
+ //       }
+
     }
 
 

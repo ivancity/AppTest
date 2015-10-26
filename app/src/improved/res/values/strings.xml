@@ -7,4 +7,5 @@
     <string name="syncing_product_list">Syncing Product List</string>
     <string name="product_list_synced">Product List Synced</string>
     <string name="syncing_category_list">Syncing Category List</string>
+    <string name="s_prefrence_last_notification">last_notification</string>
 </resources>

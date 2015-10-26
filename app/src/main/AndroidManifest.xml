@@ -5,12 +5,9 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <!-- Permissions required by the sync adapter -->
-    <uses-permission
-        android:name="android.permission.READ_SYNC_SETTINGS"/>
-    <uses-permission
-        android:name="android.permission.WRITE_SYNC_SETTINGS"/>
-    <uses-permission
-        android:name="android.permission.AUTHENTICATE_ACCOUNTS"/>
+    <uses-permission android:name="android.permission.READ_SYNC_SETTINGS" />
+    <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
+    <uses-permission android:name="android.permission.AUTHENTICATE_ACCOUNTS" />
 
     <application
         android:allowBackup="true"
@@ -35,45 +32,56 @@
                 android:value="com.design.ivan.apptest.MainActivity" />
         </activity>
 
-        <!--Only this app can see the this Content Provider-->
+        <!-- Only this app can see the this Content Provider -->
         <provider
             android:name=".appdata.AppContentProvider"
             android:authorities="@string/authority"
-            android:label="AppTest Provider"
             android:exported="false"
-            android:syncable="true"/>
+            android:label="AppTest Provider"
+            android:syncable="true" />
 
         <!-- SyncAdapter's fake authentication service -->
-        <service android:name=".appsync.AccountAuthenticatorService">
+        <service android:name=".appsync.AccountAuthenticatorService" >
             <intent-filter>
                 <action android:name="android.accounts.AccountAuthenticator" />
             </intent-filter>
+
             <meta-data
                 android:name="android.accounts.AccountAuthenticator"
                 android:resource="@xml/authenticator" />
         </service>
 
-
         <!-- The SyncAdapter service -->
         <service
             android:name=".appsync.AppSyncService"
-            android:exported="true">
+            android:exported="true" >
             <intent-filter>
                 <action android:name="android.content.SyncAdapter" />
             </intent-filter>
+
             <meta-data
                 android:name="android.content.SyncAdapter"
                 android:resource="@xml/syncadapter" />
         </service>
 
+        <!--
+        Regular Intent Service And Brodcast Receiver without automatic update
+        TODO: delete this block later
+        -->
+        <service android:name=".service.AppTestService" />
 
-        <!--Regular Intent Service And Brodcast Receiver without automatic update
-        TODO: delete this block later-->
-        <service android:name=".service.AppTestService"/>
         <receiver
             android:name=".service.AppTestService$AlarmReceiver"
-            android:enabled="true"/>
+            android:enabled="true" />
 
+        <activity
+            android:name=".SettingsActivity"
+            android:label="@string/title_activity_settings"
+            android:parentActivityName=".MainActivity" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.design.ivan.apptest.MainActivity" />
+        </activity>
     </application>
 
 </manifest>
