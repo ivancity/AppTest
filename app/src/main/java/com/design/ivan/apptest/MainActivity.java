@@ -1,5 +1,6 @@
 package com.design.ivan.apptest;
 
+import android.content.Intent;
 import android.database.ContentObserver;
 import android.net.Uri;
 import android.os.Bundle;
@@ -10,6 +11,8 @@ import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 
 import com.design.ivan.apptest.appdata.AppDataContract;
 import com.design.ivan.apptest.appsync.AppSyncAdapter;
@@ -138,7 +141,22 @@ public class MainActivity extends AppCompatActivity
         getContentResolver().unregisterContentObserver(mObserver);
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_product, menu);
+        return true;
+    }
 
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+        if(item.getItemId() == R.id.action_settings){
+            startActivity(new Intent(this, SettingsActivity.class));
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
 
     private void findProductFragAndUpdateList(){
         ProductActivityFragment pf = (ProductActivityFragment) getSupportFragmentManager()
