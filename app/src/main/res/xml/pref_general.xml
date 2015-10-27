@@ -2,7 +2,9 @@
 
     <SwitchPreference
         android:key="example_switch"
+        android:width="20dp"
         android:title="@string/pref_title_social_recommendations"
+        android:maxLines="2"
         android:summary="@string/pref_description_social_recommendations"
         android:defaultValue="true" />
 

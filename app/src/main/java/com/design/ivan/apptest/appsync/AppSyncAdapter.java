@@ -203,10 +203,20 @@ public class AppSyncAdapter extends AbstractThreadedSyncAdapter {
         syncImmediately(context);
     }
 
+    /**
+     * Initializes the process to verify if we already have an account attach to our Sync Adapter.
+     * The Content Resolver will be in charge of setting a Periodic Sync based on our Account,
+     * Content Provider and Sync Adapter registered in the manifest. It will generate two types of sync,
+     * one precise and one not precise depending of the API that we have on the device.
+     * @param context It is needed for having access to the Account Manager from the system.
+     */
     public static void initializeSyncAdapter(Context context) {
         getSyncAccount(context);
     }
 
+    /**
+     * Method that generate and sends notifications to the user.
+     */
     private void notifyUser(){
         Context context = getContext();
 
@@ -279,6 +289,11 @@ public class AppSyncAdapter extends AbstractThreadedSyncAdapter {
     }
 
 
+    /**
+     * Generic http request method to obtain an input stream to return a json string.
+     * @param urlServer
+     * @return raw JSON string from server
+     */
     protected String getServerData(String urlServer){
         HttpURLConnection urlConnection = null;
         BufferedReader reader = null;
