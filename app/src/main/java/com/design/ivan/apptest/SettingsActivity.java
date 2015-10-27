@@ -1,9 +1,13 @@
 package com.design.ivan.apptest;
 
 
+import android.accounts.Account;
 import android.annotation.TargetApi;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SyncRequest;
 import android.content.res.Configuration;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
@@ -19,6 +23,7 @@ import android.preference.RingtonePreference;
 import android.support.v4.app.NavUtils;
 import android.support.v7.app.ActionBar;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.MenuItem;
 
 import java.util.List;
@@ -34,12 +39,18 @@ import java.util.List;
  * href="http://developer.android.com/guide/topics/ui/settings.html">Settings
  * API Guide</a> for more information on developing a Settings UI.
  */
-public class SettingsActivity extends AppCompatPreferenceActivity {
+public class SettingsActivity extends AppCompatPreferenceActivity
+        implements SharedPreferences.OnSharedPreferenceChangeListener{
+
+    static final String TAG = SettingsActivity.class.getSimpleName();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d(TAG, "onCreate");
         setupActionBar();
     }
+
 
     /**
      * Set up the {@link android.app.ActionBar}, if the API is available.
@@ -175,6 +186,11 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
                 || NotificationPreferenceFragment.class.getName().equals(fragmentName);
     }
 
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        Log.d(TAG, "ON SHARED PREFERENCE CHANGED");
+    }
+
     /**
      * This fragment shows general preferences only. It is used when the
      * activity is showing a two-pane settings UI.
@@ -212,6 +228,9 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
      */
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     public static class NotificationPreferenceFragment extends PreferenceFragment {
+
+
+
         @Override
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
@@ -222,7 +241,10 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             // to their values. When their values change, their summaries are
             // updated to reflect the new value, per the Android Design
             // guidelines.
-            bindPreferenceSummaryToValue(findPreference("notifications_new_message_ringtone"));
+
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.key_notification_new_message_ringtone)));
+
+
         }
 
         @Override
@@ -234,6 +256,8 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             }
             return super.onOptionsItemSelected(item);
         }
+
+
     }
 
     /**
@@ -241,7 +265,8 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
      * activity is showing a two-pane settings UI.
      */
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-    public static class DataSyncPreferenceFragment extends PreferenceFragment {
+    public static class DataSyncPreferenceFragment extends PreferenceFragment
+            implements SharedPreferences.OnSharedPreferenceChangeListener{
         @Override
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
@@ -252,7 +277,10 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             // to their values. When their values change, their summaries are
             // updated to reflect the new value, per the Android Design
             // guidelines.
-            bindPreferenceSummaryToValue(findPreference("sync_frequency"));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.key_sync_frequency)));
+
+            Log.d(TAG, "on create notification datasync preference");
+            getPreferenceManager().getSharedPreferences().registerOnSharedPreferenceChangeListener(this);
         }
 
         @Override
@@ -263,6 +291,54 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
                 return true;
             }
             return super.onOptionsItemSelected(item);
+        }
+
+        @Override
+        public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+            //in minutes
+
+            Log.d(TAG, "incoming key = " + key);
+            if(!key.equals(getString(R.string.key_sync_frequency))){
+                return;
+            }
+            int interval = Integer.valueOf(
+                    Integer.valueOf(sharedPreferences.getString(key, "180")));//default 3 hours = 180 min
+            Account account = new Account(getString(R.string.app_name)
+                    , getString(R.string.sync_account_type));
+
+            //if the interval is -1 that's NEVER thus cancel all SyncRequests and exit method
+            if(interval < 0){
+                //Cancel first any SyncRequest that matches this account and sync acount type.
+                ContentResolver.cancelSync(account
+                        , getString(R.string.authority));
+                return;
+            }
+
+            //We know at this point that the user chose an interval.
+
+            //in seconds
+            int syncInterval = interval * 60;
+            int flexTime = syncInterval/3;
+            String authority = getString(R.string.authority);
+
+            //Now that we know it is canceled proceed to create a new SyncRequest with the updated
+            //time chose by the user.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                // we can enable inexact timers in our periodic sync
+                Log.d(TAG, "setting interval: " + syncInterval);
+                SyncRequest.Builder request = (new SyncRequest.Builder()).
+                        syncPeriodic(syncInterval, flexTime);
+
+                request.setSyncAdapter(account, authority);
+                request.setExtras(new Bundle());
+                ContentResolver.requestSync(request.build());
+            } else {
+                ContentResolver.addPeriodicSync(account,
+                        authority, new Bundle(), syncInterval);
+            }
+
+            ContentResolver.setSyncAutomatically(account, authority, true);
+
         }
     }
 }

@@ -2,7 +2,6 @@ package com.design.ivan.apptest.appsync;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.AbstractThreadedSyncAdapter;
 import android.content.ContentProviderClient;
@@ -18,6 +17,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.app.TaskStackBuilder;
 import android.util.Log;
 
@@ -89,7 +89,7 @@ public class AppSyncAdapter extends AbstractThreadedSyncAdapter {
         } catch (JSONException e) {
             e.printStackTrace();
         } finally {
-            //notifyUser();
+            notifyUser();
             //TODO: Debug purposes. manage this call back to the Activity properly
             callActivity();
         }
@@ -107,6 +107,7 @@ public class AppSyncAdapter extends AbstractThreadedSyncAdapter {
      * @param context The context used to access the account service
      */
     public static void syncImmediately(Context context) {
+        Log.d(TAG, "syncing adapter with Content Provider");
         Bundle bundle = new Bundle();
         bundle.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true);
         bundle.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);
@@ -138,7 +139,7 @@ public class AppSyncAdapter extends AbstractThreadedSyncAdapter {
          */
 
         if ( null == accountManager.getPassword(newAccount) ) {
-
+            Log.d(TAG, "password doesnt exist in AccountManager");
         /*
          * Add the account and account type, no password or user data
          * If successful, return the Account object, otherwise report an error.
@@ -156,7 +157,7 @@ public class AppSyncAdapter extends AbstractThreadedSyncAdapter {
 
             onAccountCreated(newAccount, context);
 
-        }
+        } else Log.d(TAG, "Password Exists no new Accound added");
         return newAccount;
     }
 
@@ -220,7 +221,12 @@ public class AppSyncAdapter extends AbstractThreadedSyncAdapter {
     private void notifyUser(){
         Context context = getContext();
 
+        //Get system preference selected from Settings activity.
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        String displayNotificationsKey = context.getString(R.string.key_notification_new_message);
+        boolean displayNotifications = prefs.getBoolean(displayNotificationsKey,
+                Boolean.parseBoolean(context.getString(R.string.pref_notifications_default)));
+
         String lastNotificationKey = context.getString(R.string.s_prefrence_last_notification);
         long lastSync = prefs.getLong(lastNotificationKey, 0);
 
@@ -241,15 +247,20 @@ public class AppSyncAdapter extends AbstractThreadedSyncAdapter {
 */
             //if(cursor.moveToFirst()){ do something } else { don't do anything }
 
-            //TODO: Get some data from the cursor
-            String textMessage = "Some text";
-            int drawableId = R.drawable.ic_photo_size_select_actual_black_36dp;
+        Log.d(TAG, "displayNotification = " + displayNotifications);
+        if(displayNotifications) {
 
+            //TODO: Get some data from the cursor
+            String textMessage = "New Content Received from server";
+            int drawableId = android.R.drawable.ic_menu_my_calendar;
+
+
+            //TODO: create Notifications that expand for API 4.1 >
             // NotificationCompatBuilder is a very convenient way to build backward-compatible
             // notifications.  Just throw in some data.
             NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(getContext())
                     .setSmallIcon(drawableId)
-                    .setContentTitle("Title")
+                    .setContentTitle("Incoming Message")
                     .setContentText(textMessage);
 
             // Make something interesting happen when the user clicks on the notification.
@@ -266,17 +277,20 @@ public class AppSyncAdapter extends AbstractThreadedSyncAdapter {
                     stackBuilder.getPendingIntent(
                             0,
                             PendingIntent.FLAG_UPDATE_CURRENT //If pending intent exist keep it but replace its
-                                    //extra with new extra coming from this new Pending Intent.
+                            //extra with new extra coming from this new Pending Intent.
                     );
             //Pending Intent to send when the notification is clicked.
             mBuilder.setContentIntent(resultPendingIntent);
 
+/*
             NotificationManager mNotificationManager =
                     (NotificationManager) getContext().getSystemService(Context.NOTIFICATION_SERVICE);
             // CATEGORY_NOTIFICATION_ID allows you to update the notification later on.
             //if notification with the same ID has been alaready posted will be replaced with this one.
             mNotificationManager.notify(CATEGORY_NOTIFICATION_ID, mBuilder.build());
+*/
 
+            NotificationManagerCompat.from(getContext()).notify(CATEGORY_NOTIFICATION_ID, mBuilder.build());
 
             //Refresh last sync with current time and save in SharedPreferences.
             SharedPreferences.Editor editor = prefs.edit();
@@ -284,7 +298,7 @@ public class AppSyncAdapter extends AbstractThreadedSyncAdapter {
             editor.commit();
 
 
- //       }
+        }
 
     }
 
