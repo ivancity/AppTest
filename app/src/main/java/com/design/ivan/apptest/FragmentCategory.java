@@ -1,9 +1,11 @@
 package com.design.ivan.apptest;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
@@ -16,15 +18,18 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import com.design.ivan.apptest.appdata.AppDataContract;
+import com.design.ivan.apptest.appsync.AppSyncAdapter;
 
 /**
  * Created by ivanm on 10/12/15.
  */
 public class FragmentCategory extends Fragment
         implements AdapterView.OnItemClickListener,
-        LoaderManager.LoaderCallbacks<Cursor> {
+        LoaderManager.LoaderCallbacks<Cursor>,
+        SharedPreferences.OnSharedPreferenceChangeListener{
 
     //RecyclerView categoryRecycleView;
 
@@ -111,6 +116,7 @@ public class FragmentCategory extends Fragment
         return view;
     }
 
+
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         //the loader manager will take care of the loader life cycle, and some optimization.
@@ -118,6 +124,19 @@ public class FragmentCategory extends Fragment
         super.onActivityCreated(savedInstanceState);
     }
 
+    @Override
+    public void onResume() {
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        sp.registerOnSharedPreferenceChangeListener(this);
+        super.onResume();
+    }
+
+    @Override
+    public void onPause() {
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        sp.unregisterOnSharedPreferenceChangeListener(this);
+        super.onPause();
+    }
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
@@ -213,5 +232,44 @@ public class FragmentCategory extends Fragment
         //}
     }
 
+    /*
+        Updates the empty list view with contextually relevant information that the user can
+        use to determine why they aren't seeing weather.
+     */
+    private void updateEmptyView() {
+        if ( adapter.getCount() == 0 ) {
+            TextView tv = (TextView) getView().findViewById(R.id.text_empty_list);
+            if ( null != tv ) {
+                // if cursor is empty, why? do we have an invalid location
+                int message = R.string.empty_category_list;
+                @AppSyncAdapter.CategoryStatus int location = Utility.getCategoryStatus(getActivity());
+                switch (location) {
+                    case AppSyncAdapter.CATEGORY_STATUS_SERVER_DOWN:
+                        message = R.string.empty_category_list_server_down;
+                        break;
+                    case AppSyncAdapter.CATEGORY_STATUS_SERVER_INVALID:
+                        message = R.string.empty_category_list_server_error;
+                        break;
+                    case AppSyncAdapter.CATEGORY_STATUS_INVALID:
+                        message = R.string.not_valid_data_from_server;
+                        break;
+                    default:
+                        if (!Utility.isNetworkAvailable(getActivity()) ) {
+                            message = R.string.empty_category_list_no_network;
+                        }
+                }
+                tv.setText(message);
+            }
+        }
+    }
 
+
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        if ( key.equals(getString(R.string.pref_category_status_key)) ) {
+            //Utility.resetCategoryStatus(getContext());
+            //AppSyncAdapter.syncImmediately(getContext());
+            updateEmptyView();
+        }
+    }
 }

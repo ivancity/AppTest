@@ -16,6 +16,7 @@ import android.database.Cursor;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.annotation.IntDef;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.app.TaskStackBuilder;
@@ -34,6 +35,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Vector;
@@ -68,6 +71,16 @@ public class AppSyncAdapter extends AbstractThreadedSyncAdapter {
     static final int INDEX_CATEGORY_NAME = 2;
     static final int INDEX_IMAGE_URL = 3;
 
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef({CATEGORY_STATUS_OK, CATEGORY_STATUS_SERVER_DOWN,
+            CATEGORY_STATUS_SERVER_INVALID, CATEGORY_STATUS_UNKNOWN, CATEGORY_STATUS_INVALID})
+    public @interface CategoryStatus {}
+
+    public static final int CATEGORY_STATUS_OK = 0;
+    public static final int CATEGORY_STATUS_SERVER_DOWN = 1;
+    public static final int CATEGORY_STATUS_SERVER_INVALID = 2;
+    public static final int CATEGORY_STATUS_UNKNOWN = 3;
+    public static final int CATEGORY_STATUS_INVALID = 4;
 
 
     public AppSyncAdapter(Context context, boolean autoInitialize) {
@@ -88,6 +101,7 @@ public class AppSyncAdapter extends AbstractThreadedSyncAdapter {
                 Log.d(TAG, "Something went wrong receiving raw json response");
         } catch (JSONException e) {
             e.printStackTrace();
+            setCategoryStatus(getContext(), CATEGORY_STATUS_SERVER_INVALID);
         } finally {
             notifyUser();
             //TODO: Debug purposes. manage this call back to the Activity properly
@@ -341,6 +355,7 @@ public class AppSyncAdapter extends AbstractThreadedSyncAdapter {
 
             if (buffer.length() == 0) {
                 // Stream was empty.  No point in parsing.
+                setCategoryStatus(getContext(), CATEGORY_STATUS_SERVER_DOWN);
                 return null;
             }
             rawJsonResponse = buffer.toString();
@@ -353,6 +368,7 @@ public class AppSyncAdapter extends AbstractThreadedSyncAdapter {
             Log.e("GetCategoryTask", "Error ", e);
             // If the code didn't successfully get the weather data, there's no point in attemping
             // to parse it.
+            setCategoryStatus(getContext(), CATEGORY_STATUS_SERVER_DOWN);
             return null;
         } finally{
             if (urlConnection != null) {
@@ -381,6 +397,7 @@ public class AppSyncAdapter extends AbstractThreadedSyncAdapter {
         final String KEY_ID = "id";
         final String KEY_NAME = "name";
         final String KEY_URLIMAGE = "image_url";
+        final String MESSAGE_CODE = "cod";
 
         try{
             String name, imageUrl;
@@ -389,6 +406,31 @@ public class AppSyncAdapter extends AbstractThreadedSyncAdapter {
             ContentValues categoryValues = null;
 
             JSONObject categoryJson = new JSONObject(jsonCategoryStr);
+
+
+            /* do we have an error?
+            The next block of code will check if we have an error code coming from the server
+            at this point we don't know yet how it is the correct key for code server status
+            coming from the server response
+             */
+            //TODO uncomment when we know what is the correct server code key coming from the JSON string
+            /*
+            if ( categoryJson.has(MESSAGE_CODE) ) {
+                int errorCode = categoryJson.getInt(MESSAGE_CODE);
+
+                switch (errorCode) {
+                    case HttpURLConnection.HTTP_OK:
+                        break;
+                    case HttpURLConnection.HTTP_NOT_FOUND:
+                        setCategoryStatus(getContext(), CATEGORY_STATUS_INVALID);
+                        return;
+                    default:
+                        setCategoryStatus(getContext(), CATEGORY_STATUS_SERVER_DOWN);
+                        return;
+                }
+            }
+*/
+
 
             //getting array of categories from json response
             JSONArray categoryArray = categoryJson.getJSONObject(KEY_DATA).getJSONArray(KEY_DATA);
@@ -494,6 +536,12 @@ public class AppSyncAdapter extends AbstractThreadedSyncAdapter {
         return categoryValues;
     }
 
+    static private void setCategoryStatus(Context c, @CategoryStatus int categoryStatus){
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(c);
+        SharedPreferences.Editor spe = sp.edit();
+        spe.putInt(c.getString(R.string.pref_category_status_key), categoryStatus);
+        spe.commit();
+    }
 
 
 

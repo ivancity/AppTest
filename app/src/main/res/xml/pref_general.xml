@@ -1,4 +1,15 @@
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+<PreferenceScreen
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:custom="http://schemas.android.com/apk/res/com.design.ivan.apptest">
+
+    <com.design.ivan.apptest.LocationEditTextPreference
+        android:title="Location"
+        android:key="@string/pref_default_display_name"
+        android:defaultValue="@string/pref_default_display_name2"
+        android:inputType="text"
+        android:singleLine="true"
+        custom:minLength="3" />
+
 
     <SwitchPreference
         android:key="example_switch"

@@ -51,6 +51,20 @@ public class SettingsActivity extends AppCompatPreferenceActivity
         setupActionBar();
     }
 
+    @Override
+    protected void onPostResume() {
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+        sp.registerOnSharedPreferenceChangeListener(this);
+        super.onPostResume();
+
+    }
+
+    @Override
+    protected void onPause() {
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+        sp.unregisterOnSharedPreferenceChangeListener(this);
+        super.onPause();
+    }
 
     /**
      * Set up the {@link android.app.ActionBar}, if the API is available.
@@ -298,47 +312,47 @@ public class SettingsActivity extends AppCompatPreferenceActivity
             //in minutes
 
             Log.d(TAG, "incoming key = " + key);
-            if(!key.equals(getString(R.string.key_sync_frequency))){
-                return;
+            if(key.equals(getString(R.string.key_sync_frequency))) {
+                int interval = Integer.valueOf(sharedPreferences.getString(key, "180"));//default 3 hours = 180 min
+                Account account = new Account(getString(R.string.app_name)
+                        , getString(R.string.sync_account_type));
+
+                //if the interval is -1 that's NEVER thus cancel all SyncRequests and exit method
+                if (interval < 0) {
+                    //Cancel first any SyncRequest that matches this account and sync acount type.
+                    ContentResolver.cancelSync(account
+                            , getString(R.string.authority));
+                    return;
+                }
+
+                //We know at this point that the user chose an interval.
+
+                //in seconds
+                int syncInterval = interval * 60;
+                int flexTime = syncInterval / 3;
+                String authority = getString(R.string.authority);
+
+                //Now that we know it is canceled proceed to create a new SyncRequest with the updated
+                //time chose by the user.
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                    // we can enable inexact timers in our periodic sync
+                    Log.d(TAG, "setting interval: " + syncInterval);
+                    SyncRequest.Builder request = (new SyncRequest.Builder()).
+                            syncPeriodic(syncInterval, flexTime);
+
+                    request.setSyncAdapter(account, authority);
+                    request.setExtras(new Bundle());
+                    ContentResolver.requestSync(request.build());
+                } else {
+                    ContentResolver.addPeriodicSync(account,
+                            authority, new Bundle(), syncInterval);
+                }
+
+                ContentResolver.setSyncAutomatically(account, authority, true);
+            } else if (key.equals(getString(R.string.pref_category_status_key))){
+                //something happened to the category. change it
+                Utility.resetCategoryStatus(getActivity());
             }
-            int interval = Integer.valueOf(
-                    Integer.valueOf(sharedPreferences.getString(key, "180")));//default 3 hours = 180 min
-            Account account = new Account(getString(R.string.app_name)
-                    , getString(R.string.sync_account_type));
-
-            //if the interval is -1 that's NEVER thus cancel all SyncRequests and exit method
-            if(interval < 0){
-                //Cancel first any SyncRequest that matches this account and sync acount type.
-                ContentResolver.cancelSync(account
-                        , getString(R.string.authority));
-                return;
-            }
-
-            //We know at this point that the user chose an interval.
-
-            //in seconds
-            int syncInterval = interval * 60;
-            int flexTime = syncInterval/3;
-            String authority = getString(R.string.authority);
-
-            //Now that we know it is canceled proceed to create a new SyncRequest with the updated
-            //time chose by the user.
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                // we can enable inexact timers in our periodic sync
-                Log.d(TAG, "setting interval: " + syncInterval);
-                SyncRequest.Builder request = (new SyncRequest.Builder()).
-                        syncPeriodic(syncInterval, flexTime);
-
-                request.setSyncAdapter(account, authority);
-                request.setExtras(new Bundle());
-                ContentResolver.requestSync(request.build());
-            } else {
-                ContentResolver.addPeriodicSync(account,
-                        authority, new Bundle(), syncInterval);
-            }
-
-            ContentResolver.setSyncAutomatically(account, authority, true);
-
         }
     }
 }
