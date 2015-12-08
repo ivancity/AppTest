@@ -1,6 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:custom="http://schemas.android.com/apk/res/com.design.ivan.apptest">
+    xmlns:custom="http://schemas.android.com/apk/lib/com.design.ivan.apptest"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
     <com.design.ivan.apptest.LocationEditTextPreference
         android:title="Location"
@@ -8,7 +11,7 @@
         android:defaultValue="@string/pref_default_display_name2"
         android:inputType="text"
         android:singleLine="true"
-        custom:minLength="3" />
+        custom:minLength="3"/>
 
 
     <SwitchPreference

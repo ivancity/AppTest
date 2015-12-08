@@ -1,11 +1,13 @@
 package com.design.ivan.apptest;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.ContentObserver;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.preference.PreferenceManager;
 import android.support.design.widget.TabLayout;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
@@ -16,14 +18,19 @@ import android.view.MenuItem;
 
 import com.design.ivan.apptest.appdata.AppDataContract;
 import com.design.ivan.apptest.appsync.AppSyncAdapter;
+import com.design.ivan.apptest.gcm.RegistrationIntentService;
 import com.design.ivan.apptest.interfaces.CallBackEmptyList;
 import com.design.ivan.apptest.interfaces.CallBackList;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
+import com.google.android.gms.gcm.GoogleCloudMessaging;
 
 public class MainActivity extends AppCompatActivity
         implements TabLayout.OnTabSelectedListener,
                     CallBackList,
                     CallBackEmptyList {
 
+    private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
     protected ViewPager viewPager;
 
     protected boolean mTwoPane;
@@ -34,6 +41,9 @@ public class MainActivity extends AppCompatActivity
     private static final String PRODUCTFRAGMENT_TAG = "DFTAG";
     private static final String CATEGORYFRAGMENT_TAG = "CFTAG";
     private static final String TAG = MainActivity.class.getSimpleName();
+    private GoogleCloudMessaging mGcm;
+
+    public static final String SENT_TOKEN_TO_SERVER = "sentTokenToServer";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -122,6 +132,23 @@ public class MainActivity extends AppCompatActivity
                 , mObserver);
 
 
+        // If Google Play Services is up to date, we'll want to register GCM. If it is not, we'll
+        // skip the registration and this device will not receive any downstream messages from
+        // our fake server. Because weather alerts are not a core feature of the app, this should
+        // not affect the behavior of the app, from a user perspective.
+        if (checkPlayServices()) {
+            // Because this is the initial creation of the app, we'll want to be certain we have
+            // a token. If we do not, then we will start the IntentService that will register this
+            // application with GCM.
+            SharedPreferences sharedPreferences =
+                    PreferenceManager.getDefaultSharedPreferences(this);
+            boolean sentToken = sharedPreferences.getBoolean(SENT_TOKEN_TO_SERVER, false);
+            if (!sentToken) {
+                Log.d(TAG, "onCreate: About to start intent service");
+                Intent intent = new Intent(this, RegistrationIntentService.class);
+                startService(intent);
+            }
+        }
 
 
     }
@@ -129,6 +156,14 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onResume() {
         super.onResume();
+
+        // If Google Play Services is not available, some features, such as GCM-powered weather
+        // alerts, will not be available.
+        /*
+        if (!checkPlayServices()) {
+            // Store regID as null
+        }
+*/
         //TODO: remove this method when Sync Adapter is implemented for Products
         findProductFragAndUpdateList();
 
@@ -221,4 +256,32 @@ public class MainActivity extends AppCompatActivity
     public void onEmptyList(boolean isEmpty) {
 
     }
+
+
+    /**
+     * Check the device to make sure it has the Google Play Services APK. If
+     * it doesn't, display a dialog that allows users to download the APK from
+     * the Google Play Store or enable it in the device's system settings.
+     */
+    private boolean checkPlayServices() {
+
+        GoogleApiAvailability googleAPI = GoogleApiAvailability.getInstance();
+        int result = googleAPI.isGooglePlayServicesAvailable(this);
+        if(result != ConnectionResult.SUCCESS) {
+            if(googleAPI.isUserResolvableError(result)) {
+                googleAPI.getErrorDialog(this, result,
+                        PLAY_SERVICES_RESOLUTION_REQUEST).show();
+            } else {
+                Log.d(TAG, "device is not supported");
+            }
+
+            return false;
+        }
+
+        return true;
+
+
+
+    }
+
 }
